@@ -324,7 +324,7 @@ public class ImmediateAvatarRenderer extends AvatarRenderer {
         // mid render function
         if (part.midRender != null) {
             FiguraMod.popPushProfiler("midRenderFunction");
-            avatar.run(part.midRender, avatar.render, tickDelta, avatar.renderMode.name(), part);
+            avatar.run(part.midRender, avatar.render, tickDelta, avatar.renderMode.name(), part, custom.positionMatrix, part.savedPartToWorldMat);
         }
 
         // render this
