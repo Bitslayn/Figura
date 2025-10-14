@@ -6,6 +6,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.figuramc.figura.ducks.SuggestionsListAccessor;
 import org.figuramc.figura.font.Emojis;
 import org.spongepowered.asm.mixin.*;
@@ -22,6 +26,8 @@ public class SuggestionsListMixin implements SuggestionsListAccessor {
     @Unique private boolean figuraList;
     @Unique private static GuiGraphics gui;
 
+    @Unique private Pattern emojiPattern = Pattern.compile("(:[^:]+:?|:)$");
+
     @Inject(at = @At("HEAD"), method = "render")
     private void onRender(GuiGraphics graphics, int mouseX, int mouseY, CallbackInfo ci) {
         gui = graphics;
@@ -33,7 +39,10 @@ public class SuggestionsListMixin implements SuggestionsListAccessor {
             return x;
 
         // get emoji
-        Component emoji = Emojis.applyEmojis(Component.literal(text));
+        Matcher matcher = emojiPattern.matcher(text);
+        String lastEmoji = matcher.find() ? matcher.group(1) : text;
+
+        Component emoji = Emojis.applyEmojis(Component.literal(lastEmoji));
 
         // dont render if no emoji was applied
         if (emoji.getString().equals(text))

@@ -14,6 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Mixin(CommandSuggestions.class)
 public abstract class CommandSuggestionsMixinFabric {
@@ -24,6 +26,8 @@ public abstract class CommandSuggestionsMixinFabric {
 
     @Unique private boolean emojiSuggestions;
 
+    @Unique private Pattern emojiPattern = Pattern.compile("(:[^:]+:?|:)$");
+
     @Inject(method = "updateCommandInfo", at = @At(value = "INVOKE", target = "Lnet/minecraft/commands/SharedSuggestionProvider;suggest(Ljava/lang/Iterable;Lcom/mojang/brigadier/suggestion/SuggestionsBuilder;)Ljava/util/concurrent/CompletableFuture;"), locals = LocalCapture.CAPTURE_FAILSOFT)
     private void addFiguraSuggestions(CallbackInfo ci, String string, StringReader stringReader, boolean bl2, int i, String string2, int j, Collection<String> collection) {
         emojiSuggestions = false;
@@ -31,10 +35,16 @@ public abstract class CommandSuggestionsMixinFabric {
             return;
 
         String lastWord = string2.substring(j);
-        Collection<String> emojis = Emojis.getMatchingEmojis(lastWord);
+
+        Matcher matcher = emojiPattern.matcher(lastWord);
+        String lastEmoji = matcher.find() ? matcher.group(1) : lastWord;
+
+        Collection<String> emojis = Emojis.getMatchingEmojis(lastEmoji);
         emojiSuggestions = !emojis.isEmpty();
         if (emojiSuggestions)
-            collection.addAll(emojis);
+            for (String emoji : emojis) {
+                collection.add(lastWord.substring(0, lastWord.lastIndexOf(lastEmoji)) + emoji);
+            }
     }
 
     @Inject(method = "updateCommandInfo", at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/commands/SharedSuggestionProvider;suggest(Ljava/lang/Iterable;Lcom/mojang/brigadier/suggestion/SuggestionsBuilder;)Ljava/util/concurrent/CompletableFuture;", shift = At.Shift.AFTER))
